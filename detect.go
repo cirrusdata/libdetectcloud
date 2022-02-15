@@ -19,6 +19,7 @@ type Clouds struct {
 	Sl        string
 	Vr        string
 	Container string
+	VMware    string
 }
 
 // Detect function
@@ -26,7 +27,7 @@ func Detect() string {
 	if runtime.GOOS != "darwin" {
 		var c Clouds
 		var wg sync.WaitGroup
-		wg.Add(8)
+		wg.Add(9)
 		go func() {
 			defer wg.Done()
 			c.Aws = detectAWS()
@@ -59,6 +60,10 @@ func Detect() string {
 			defer wg.Done()
 			c.Container = detectContainer()
 		}()
+		go func() {
+			defer wg.Done()
+			c.VMware = detectVMware()
+		}()
 		wg.Wait()
 
 		if c.Aws != "" {
@@ -84,6 +89,9 @@ func Detect() string {
 		}
 		if c.Container != "" {
 			return c.Container
+		}
+		if c.VMware != "" {
+			return c.VMware
 		}
 	}
 	return ""
