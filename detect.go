@@ -2,7 +2,7 @@ package libdetectcloud
 
 import (
 	"net/http"
-	"runtime"
+	"runtime".
 	"sync"
 	"time"
 )
