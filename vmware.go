@@ -4,6 +4,7 @@ import (
 	"io/ioutil"
 	"runtime"
 	"strings"
+	"exec"
 )
 
 func detectVMware() string {
@@ -22,7 +23,7 @@ func detectVMware() string {
 		if err != nil {
 			return ""
 		}
-		if strings.Contains(string(data), "VMware Virtual Platform") {
+		if strings.Contains(string(out), "VMware Virtual Platform") {
 			return "VMware"
 		}
 	}
