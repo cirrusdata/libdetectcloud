@@ -4,7 +4,7 @@ import (
 	"io/ioutil"
 	"runtime"
 	"strings"
-	"exec"
+	"os/exec"
 )
 
 func detectVMware() string {
