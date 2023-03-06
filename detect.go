@@ -9,6 +9,12 @@ import (
 
 var hc = &http.Client{Timeout: 300 * time.Millisecond}
 
+func init() {
+	trans := http.DefaultTransport.(*http.Transport).Clone()
+	trans.Proxy = nil
+	hc.Transport = trans
+}
+
 // Clouds type
 type Clouds struct {
 	Aws       string
