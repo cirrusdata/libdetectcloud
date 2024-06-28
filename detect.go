@@ -73,7 +73,7 @@ func Detect() string {
 		}()
 		go func() {
 			defer wg.Done()
-			c.VMware = detectNutanix()
+			c.Nutanix = detectNutanix()
 		}()
 		wg.Wait()
 
