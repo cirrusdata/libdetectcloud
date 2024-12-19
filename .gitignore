@@ -29,3 +29,5 @@ modules/
 middleware/
 
 detectcloud
+.idea
+.DS_Store
