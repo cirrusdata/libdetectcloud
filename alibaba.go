@@ -1,20 +1,11 @@
 package libdetectcloud
 
-import (
-	"net/http"
-)
-
 const VendorAlibaba = "Alibaba Cloud"
 
 func detectAlibaba() string {
-	// Alibaba ECS metadata lives on a carrier-grade NAT address, not link-local.
-	resp, err := hc.Get("http://100.100.100.200/latest/meta-data/instance/instance-id")
-	if err == nil {
-		defer resp.Body.Close()
-		if resp.StatusCode == http.StatusOK {
-			return VendorAlibaba
-		}
-	}
+	// Deliberately no metadata probe: we do not want deployed agents to
+	// contact the ECS metadata service (100.100.100.200). Detection is
+	// DMI-only.
 	if dmiVendorHasPrefix("Alibaba Cloud") || dmiProductContains("Alibaba Cloud ECS") {
 		return VendorAlibaba
 	}

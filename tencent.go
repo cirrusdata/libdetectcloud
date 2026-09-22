@@ -1,19 +1,10 @@
 package libdetectcloud
 
-import (
-	"net/http"
-)
-
 const VendorTencent = "Tencent Cloud"
 
 func detectTencent() string {
-	resp, err := hc.Get("http://metadata.tencentyun.com/latest/meta-data/instance-id")
-	if err == nil {
-		defer resp.Body.Close()
-		if resp.StatusCode == http.StatusOK {
-			return VendorTencent
-		}
-	}
+	// Deliberately no metadata probe: we do not want deployed agents to
+	// contact tencentyun.com. Detection is DMI-only.
 	// "Smdbmds" is the sys_vendor on older Tencent CVM guests.
 	if dmiVendorHasPrefix("Tencent Cloud") || dmiVendorHasPrefix("Smdbmds") {
 		return VendorTencent
