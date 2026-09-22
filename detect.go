@@ -15,105 +15,63 @@ func init() {
 	hc.Transport = trans
 }
 
-// Clouds type
-type Clouds struct {
-	Aws       string
-	Azure     string
-	Do        string
-	Gce       string
-	Ost       string
-	Sl        string
-	Vr        string
-	Container string
-	VMware    string
-	Nutanix   string
-	KVM       string
+// detector probes one environment and returns its display name or "".
+type detector func() string
+
+// detectors run concurrently, but their results are considered in list order
+// and the first non-empty result wins. Order matters:
+//   - cloud metadata endpoint probes come first because they are authoritative
+//   - the container check follows, as before
+//   - DMI-based hypervisor checks come next, most specific first
+//   - detectKVM is last: QEMU/KVM SMBIOS values are the default that more
+//     specific platforms (CloudStack, oVirt, Proxmox, ...) share
+var detectors = []detector{
+	detectAWS,
+	detectAzure,
+	detectDigitalOcean,
+	detectGCE,
+	detectSoftlayer,
+	detectVultr,
+	detectOCI,
+	detectAlibaba,
+	detectTencent,
+	detectHetzner,
+	detectContainer,
+	detectVMware,
+	detectNutanix,
+	detectOVirt,
+	detectCloudStack,
+	detectKubeVirt,
+	detectOpenStack,
+	detectHyperV,
+	detectXen,
+	detectVirtualBox,
+	detectOpenNebula,
+	detectLinode,
+	detectUpCloud,
+	detectHuawei,
+	detectKVM,
 }
 
-// Detect function
+// Detect returns the detected cloud or virtualization environment, or an
+// empty string when the environment is unknown.
 func Detect() string {
-	if runtime.GOOS != "darwin" {
-		var c Clouds
-		var wg sync.WaitGroup
-		wg.Add(11)
-		go func() {
+	if runtime.GOOS == "darwin" {
+		return ""
+	}
+	results := make([]string, len(detectors))
+	var wg sync.WaitGroup
+	for i, d := range detectors {
+		wg.Add(1)
+		go func(i int, fn detector) {
 			defer wg.Done()
-			c.Aws = detectAWS()
-		}()
-		go func() {
-			defer wg.Done()
-			c.Azure = detectAzure()
-		}()
-		go func() {
-			defer wg.Done()
-			c.Do = detectDigitalOcean()
-		}()
-		go func() {
-			defer wg.Done()
-			c.Gce = detectGCE()
-		}()
-		go func() {
-			defer wg.Done()
-			c.Ost = detectOpenStack()
-		}()
-		go func() {
-			defer wg.Done()
-			c.Sl = detectSoftlayer()
-		}()
-		go func() {
-			defer wg.Done()
-			c.Vr = detectVultr()
-		}()
-		go func() {
-			defer wg.Done()
-			c.Container = detectContainer()
-		}()
-		go func() {
-			defer wg.Done()
-			c.VMware = detectVMware()
-		}()
-		go func() {
-			defer wg.Done()
-			c.Nutanix = detectNutanix()
-		}()
-		go func() {
-			defer wg.Done()
-			c.KVM = detectKVM()
-		}()
-		wg.Wait()
-
-		if c.Aws != "" {
-			return c.Aws
-		}
-		if c.Azure != "" {
-			return c.Azure
-		}
-		if c.Do != "" {
-			return c.Do
-		}
-		if c.Gce != "" {
-			return c.Gce
-		}
-		if c.Ost != "" {
-			return c.Ost
-		}
-		if c.Sl != "" {
-			return c.Sl
-		}
-		if c.Vr != "" {
-			return c.Vr
-		}
-		if c.Container != "" {
-			return c.Container
-		}
-		if c.VMware != "" {
-			return c.VMware
-		}
-		if c.Nutanix != "" {
-			return c.Nutanix
-		}
-		if c.KVM != "" {
-			return c.KVM
+			results[i] = fn()
+		}(i, d)
+	}
+	wg.Wait()
+	for _, r := range results {
+		if r != "" {
+			return r
 		}
 	}
 	return ""
