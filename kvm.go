@@ -21,12 +21,5 @@ func detectKVM() string {
 			return VendorKVM
 		}
 	}
-	// Last resort: a hypervisor we cannot name beats an empty result. KVM is
-	// the sensible default since unidentified hypervisors in our fleet are
-	// QEMU/KVM-family. On Windows, HypervisorPresent is also true on a
-	// Hyper-V host's root partition, so that edge reports KVM too.
-	if dmiHypervisor() {
-		return VendorKVM
-	}
 	return ""
 }

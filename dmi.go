@@ -14,10 +14,6 @@ import (
 type dmi struct {
 	vendorFields []string
 	product      string
-	// hypervisor reports whether the machine runs on a hypervisor (the CPUID
-	// hypervisor-present bit): Linux exposes it as the "hypervisor" flag in
-	// /proc/cpuinfo, Windows as HypervisorPresent on Win32_ComputerSystem.
-	hypervisor bool
 }
 
 var (
@@ -39,14 +35,11 @@ func loadDMI() {
 	if v, err := os.ReadFile("/sys/class/dmi/id/product_name"); err == nil {
 		dmiData.product = strings.TrimSpace(string(v))
 	}
-	if v, err := os.ReadFile("/proc/cpuinfo"); err == nil {
-		dmiData.hypervisor = strings.Contains(string(v), "hypervisor")
-	}
 }
 
 func loadWindowsDMI() {
 	out, err := exec.Command("powershell.exe", "-NoProfile", "-Command",
-		"Get-WmiObject win32_computersystem | fl Manufacturer, Model, HypervisorPresent").CombinedOutput()
+		"Get-WmiObject win32_computersystem | fl Manufacturer, Model").CombinedOutput()
 	if err != nil {
 		return
 	}
@@ -60,8 +53,6 @@ func loadWindowsDMI() {
 			dmiData.vendorFields = append(dmiData.vendorFields, strings.TrimSpace(kv[1]))
 		case "Model":
 			dmiData.product = strings.TrimSpace(kv[1])
-		case "HypervisorPresent":
-			dmiData.hypervisor = strings.EqualFold(strings.TrimSpace(kv[1]), "True")
 		}
 	}
 }
@@ -92,8 +83,3 @@ func dmiProductContains(s string) bool {
 	return strings.Contains(dmiProduct(), s)
 }
 
-// dmiHypervisor reports whether the machine runs on some hypervisor.
-func dmiHypervisor() bool {
-	dmiOnce.Do(dmiLoad)
-	return dmiData.hypervisor
-}

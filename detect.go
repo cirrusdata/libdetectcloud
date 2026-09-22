@@ -24,9 +24,7 @@ type detector func() string
 //   - the container check follows, as before
 //   - DMI-based hypervisor checks come next, most specific first
 //   - detectKVM is last: QEMU/KVM SMBIOS values are the default that more
-//     specific platforms (CloudStack, oVirt, Proxmox, ...) share, and it is
-//     also the fallback for any VM whose hypervisor stays unidentified
-//     (hypervisor-present flag set but no signature match)
+//     specific platforms (CloudStack, oVirt, Proxmox, ...) share
 var detectors = []detector{
 	detectAWS,
 	detectAzure,
