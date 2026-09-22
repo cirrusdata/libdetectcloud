@@ -62,6 +62,22 @@ func TestDMIDetectors(t *testing.T) {
 	}
 }
 
+// When the machine runs on a hypervisor that matches no signature, Detect
+// falls back to KVM rather than returning empty. A bare-metal machine (no
+// hypervisor-present flag) still returns empty.
+func TestKVMHypervisorFallback(t *testing.T) {
+	setDMI([]string{"Some Vendor"}, "Some Product")
+	dmiData.hypervisor = true
+	if got := detectKVM(); got != "KVM" {
+		t.Errorf("hypervisor fallback: got %q, want KVM", got)
+	}
+
+	setDMI([]string{"Dell Inc."}, "PowerEdge R740")
+	if got := detectKVM(); got != "" {
+		t.Errorf("bare metal: got %q, want empty", got)
+	}
+}
+
 func detectorIndex(d detector) int {
 	p := reflect.ValueOf(d).Pointer()
 	for i, x := range detectors {
@@ -83,20 +99,23 @@ func TestDMIDetectorOrdering(t *testing.T) {
 		t.Fatalf("unexpected detector order: vmware=%d kvm=%d", start, end)
 	}
 	cases := []struct {
-		name    string
-		vendors []string
-		product string
-		want    string
+		name       string
+		vendors    []string
+		product    string
+		hypervisor bool
+		want       string
 	}{
-		{"cloudstack-not-kvm", []string{"Apache Software Foundation"}, "CloudStack KVM Hypervisor", "CloudStack"},
-		{"ovirt-not-kvm", []string{"oVirt", "Red Hat"}, "RHEL", "oVirt"},
-		{"kubevirt-not-kvm", []string{"KubeVirt"}, "None", "KubeVirt"},
-		{"proxmox-is-kvm", []string{"QEMU"}, "Standard PC (i440FX + PIIX, 1996)", "KVM"},
-		{"baremetal", []string{"Dell Inc."}, "PowerEdge R740", ""},
+		{"cloudstack-not-kvm", []string{"Apache Software Foundation"}, "CloudStack KVM Hypervisor", true, "CloudStack"},
+		{"ovirt-not-kvm", []string{"oVirt", "Red Hat"}, "RHEL", true, "oVirt"},
+		{"kubevirt-not-kvm", []string{"KubeVirt"}, "None", true, "KubeVirt"},
+		{"proxmox-is-kvm", []string{"QEMU"}, "Standard PC (i440FX + PIIX, 1996)", true, "KVM"},
+		{"unidentified-hypervisor-is-kvm", []string{"Some Vendor"}, "Some Product", true, "KVM"},
+		{"baremetal", []string{"Dell Inc."}, "PowerEdge R740", false, ""},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
 			setDMI(c.vendors, c.product)
+			dmiData.hypervisor = c.hypervisor
 			got := ""
 			for _, d := range detectors[start : end+1] {
 				if got = d(); got != "" {
