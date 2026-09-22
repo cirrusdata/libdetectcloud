@@ -82,4 +82,3 @@ func dmiVendorHasPrefix(s string) bool {
 func dmiProductContains(s string) bool {
 	return strings.Contains(dmiProduct(), s)
 }
-
