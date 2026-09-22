@@ -11,10 +11,13 @@ func detectGCE() string {
 	}
 	r.Header.Add("Metadata-Flavor", "Google")
 	resp, err := hc.Do(r)
-	if err != nil {
-		return ""
+	if err == nil {
+		defer resp.Body.Close()
+		if resp.StatusCode == http.StatusOK {
+			return "Google Compute Engine"
+		}
 	}
-	if resp.StatusCode == http.StatusOK {
+	if dmiVendorHasPrefix("Google") && dmiProductContains("Google Compute Engine") {
 		return "Google Compute Engine"
 	}
 	return ""

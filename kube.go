@@ -1,12 +1,20 @@
 package libdetectcloud
 
 import (
-	"io/ioutil"
+	"os"
 	"strings"
 )
 
 func detectContainer() string {
-	b, err := ioutil.ReadFile("/proc/self/cgroup")
+	// cgroup v2 no longer carries runtime names; the marker files do.
+	if _, err := os.Stat("/run/.containerenv"); err == nil {
+		return "Container"
+	}
+	if _, err := os.Stat("/.dockerenv"); err == nil {
+		return "Container"
+	}
+
+	b, err := os.ReadFile("/proc/self/cgroup")
 	if err != nil {
 		return ""
 	}
